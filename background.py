@@ -3,9 +3,11 @@ from time import sleep
 from openai import OpenAI
 from config import BaseConfig
 from models import Car
+import resend
 
 settings = BaseConfig()
 client = OpenAI(api_key=settings.OPENAI_API_KEY)
+resend.api_key = settings.RESEND_API_KEY
 
 
 def delayed_task(username: str) -> None:
@@ -49,6 +51,32 @@ async def create_description(brand, make, year, picture_url):
                 "cons": car_info["cons"],
             }
         )
+
+        def generate_email():
+            pros_list = "<br>".join([f"- {pro}" for pro in car_info["pros"]])
+            cons_list = "<br>".join([f"- {con}" for con in car_info["cons"]])
+
+            return f"""
+            Hello,
+            We have a new car for you: {brand} {make} from {year}.
+            <p><img src="{picture_url}"/></p>
+            {car_info['description']}
+            <h3>Pros</h3>
+            {pros_list}
+            <h3>Cons</h3>
+            {cons_list}            
+            """
+
+        params: resend.Emails.SendParams = {
+            "from": "FARM Cars  <onboarding@resend.dev>",
+            "to": ["docscodes@gmail.com"],
+            "subject": "New car on sale!",
+            "html": generate_email(),
+        }
+
+        resend.Emails.send(params)
+
+        return True
 
     except Exception as e:
         print(e)
