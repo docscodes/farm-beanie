@@ -16,7 +16,7 @@ from fastapi import (
 from authentication import AuthHandler
 from config import BaseConfig
 from models import Car, UpdateCar, User
-
+from background import create_description
 
 router = APIRouter()
 settings = BaseConfig()
@@ -80,6 +80,10 @@ async def add_car_with_picture(
         user=user,
     )
 
+    background_tasks.add_task(
+        create_description, brand=brand, make=make, year=year, picture_url=picture_url
+    )
+    
     return await car.insert(link_rule=WriteRules.WRITE)
 
 
